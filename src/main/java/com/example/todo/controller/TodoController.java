@@ -14,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor // Lombok: Injects service
 // Enable Cross-Origin Resource Sharing (CORS) for all origins.
 // This allows our HTML file (on a different "origin") to call the API.
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*") // not needed as front-end is integrated in the same application
 public class TodoController {
 
     private final TodoService todoService;

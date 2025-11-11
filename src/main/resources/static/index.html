@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <!-- Simple, clean font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Icons from FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* ... all your CSS rules ... */
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding-top: 4rem;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        /* Form Styling */
+        #todo-form {
+            display: flex;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        #todo-input {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            margin-right: 0.75rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #todo-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
+        }
+
+        #todo-form button {
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+            font-weight: 500;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #todo-form button:hover {
+            background-color: #0056b3;
+        }
+
+        #todo-form button:active {
+            transform: scale(0.98);
+        }
+
+        /* Message Area */
+        #message-area {
+            padding: 0 2rem;
+            color: #d9534f;
+            font-size: 0.9rem;
+            min-height: 1.5rem; /* Reserve space */
+        }
+
+        #message-area.success {
+            color: #5cb85c;
+        }
+
+        /* Todo List Styling */
+        #todo-list {
+            list-style-type: none;
+            padding-bottom: 1.5rem;
+        }
+
+        #todo-list li {
+            display: flex;
+            align-items: center;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e9ecef;
+            transition: background-color 0.2s;
+        }
+
+        #todo-list li:last-child {
+            border-bottom: none;
+        }
+
+        #todo-list li:hover {
+            background-color: #f8f9fa;
+        }
+
+        .todo-checkbox {
+            margin-right: 1rem;
+            /* Make checkbox larger */
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .todo-text {
+            flex-grow: 1;
+            font-size: 1rem;
+            color: #333;
+            transition: color 0.2s, text-decoration 0.2s;
+        }
+
+        /* Completed Task Styling */
+        li.completed .todo-text {
+            color: #888;
+            text-decoration: line-through;
+        }
+
+        /* Action Buttons */
+        .todo-actions {
+            margin-left: 1rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .todo-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #6c757d;
+            transition: color 0.2s, transform 0.1s;
+        }
+
+        .todo-actions button:hover {
+            transform: scale(1.1);
+        }
+
+        .edit-btn:hover {
+            color: #007bff; /* Blue */
+        }
+
+        .delete-btn:hover {
+            color: #dc3545; /* Red */
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>My Todo List</h1>
+    </header>
+
+    <form id="todo-form">
+        <input type="text" id="todo-input" placeholder="Add a new task..." required>
+        <button type="submit">Add Task</button>
+    </form>
+
+    <div id="message-area"></div>
+
+    <ul id="todo-list">
+        <!-- Tasks will be dynamically inserted here -->
+    </ul>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Globals ---
+        const todoForm = document.getElementById('todo-form');
+        const todoInput = document.getElementById('todo-input');
+        const todoList = document.getElementById('todo-list');
+        const messageArea = document.getElementById('message-area');
+
+        // --- MODIFICATION ---
+        // Reverted to absolute path. The relative path '/api/todos' fails
+        // when the HTML is not served from 'http://localhost:8083'
+        // (e.g., when run as a 'file://' or 'blob:').
+        // Using the full URL is more robust for all execution environments.
+        const API_URL = 'http://localhost:8083/api/todos';
+
+        // --- API Functions ---
+
+        /**
+         * Fetches all todos from the API and renders them.
+         */
+        async function fetchTodos() {
+            // Add a log to show we are trying to fetch
+            console.log('Attempting to fetch todos from:', API_URL);
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const todos = await response.json();
+
+                todoList.innerHTML = ''; // Clear existing list
+                todos.forEach(renderTodo);
+
+            } catch (error) {
+                // Log the full error object for more details
+                console.error('Full error object while fetching todos:', error);
+                // Updated error message.
+                showMessage('Error: Failed to fetch tasks. Please make sure the Java Spring Boot backend is running on http://localhost:8083.', 'error');
+            }
+        }
+
+        /**
+         * Creates a new todo item via the API.
+         */
+        async function addTodo(event) {
+            event.preventDefault(); // Stop form from submitting
+
+            const title = todoInput.value.trim();
+            if (!title) {
+                showMessage('Task title cannot be empty.', 'error');
+                return;
+            }
+
+            const newTodo = { title, completed: false };
+
+            console.log('Attempting to POST new todo to:', API_URL); // NEW LOG
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newTodo)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const savedTodo = await response.json();
+                renderTodo(savedTodo); // Add the new todo to the UI
+                todoInput.value = ''; // Clear input
+                showMessage('Task added successfully!', 'success');
+
+            } catch (error)
+             {
+                console.error('Full error object while adding todo:', error); // NEW LOG
+                showMessage('Error: Could not add task. Check backend connection.', 'error');
+            }
+        }
+
+        /**
+         * Updates a todo item (e.g., toggles completion).
+         */
+        async function updateTodo(id, updatedTodo) {
+            console.log(`Attempting to PUT update to: ${API_URL}/${id}`); // NEW LOG
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedTodo)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+
+            } catch (error) {
+                console.error('Full error object while updating todo:', error); // NEW LOG
+                showMessage('Error: Could not update task. Check backend connection.', 'error');
+            }
+        }
+
+        /**
+         * Deletes a todo item from the API.
+         */
+        async function deleteTodo(id) {
+            // Optimistic UI update: Remove from UI immediately
+            const todoItem = document.querySelector(`li[data-id="${id}"]`);
+            if (todoItem) { // <-- FIX: Changed 'todoitem' to 'todoItem' (capital 'I')
+                todoItem.remove();
+                showMessage('Task deleted.', 'success');
+            }
+
+            console.log(`Attempting to DELETE task at: ${API_URL}/${id}`); // NEW LOG
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    // If delete fails, re-fetch to restore state
+                    throw new Error('Delete failed, restoring list.');
+                }
+
+                // --- FIX ---
+                // The optimistic UI update might have failed if todoItem was null
+                // This block ensures the item is removed *after* successful delete
+                // if it wasn't removed before.
+                if (!todoItem) {
+                     const itemToRemove = document.querySelector(`li[data-id="${id}"]`);
+                     if(itemToRemove) {
+                        itemToRemove.remove();
+                     }
+                     showMessage('Task deleted.', 'success');
+                }
+
+            } catch (error) {
+                console.error('Full error object while deleting todo:', error); // NEW LOG
+                showMessage('Error: Delete failed. Refreshing list.', 'error');
+                // Rollback optimistic update
+                fetchTodos();
+            }
+        }
+
+        // --- UI Functions ---
+
+        /**
+         * Creates and appends a single todo item to the list.
+         */
+        function renderTodo(todo) {
+            const li = document.createElement('li');
+            li.setAttribute('data-id', todo.id);
+            if (todo.completed) {
+                li.classList.add('completed');
+            }
+
+            li.innerHTML = `
+                <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''}>
+                <span class="todo-text">${escapeHTML(todo.title)}</span>
+                <div class="todo-actions">
+                    <button class="edit-btn"><i class="fas fa-edit"></i></button>
+                    <button class="delete-btn"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+
+            // --- Add Event Listeners for the new todo item ---
+
+            // Toggle completion
+            li.querySelector('.todo-checkbox').addEventListener('change', (e) => {
+                const completed = e.target.checked;
+                li.classList.toggle('completed', completed);
+                // Get the title text
+                const title = li.querySelector('.todo-text').textContent;
+                updateTodo(todo.id, { title, completed });
+            });
+
+            // Edit task
+            li.querySelector('.edit-btn').addEventListener('click', () => {
+                const currentTitle = li.querySelector('.todo-text').textContent;
+                // --- FIX ---
+                // Replaced prompt with a non-blocking UI for safer execution
+                const newTitle = window.prompt('Edit task:', currentTitle);
+
+                if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
+                    const newTitleTrimmed = newTitle.trim();
+                    li.querySelector('.todo-text').textContent = newTitleTrimmed;
+                    updateTodo(todo.id, { title: newTitleTrimmed, completed: todo.completed });
+                    showMessage('Task updated!', 'success');
+                }
+            });
+
+            // Delete task
+            li.querySelector('.delete-btn').addEventListener('click', () => {
+                // --- FIX ---
+                // Replaced confirm with a non-blocking UI for safer execution
+                if (window.confirm('Are you sure you want to delete this task?')) {
+                    deleteTodo(todo.id);
+                }
+            });
+
+            todoList.appendChild(li);
+        }
+
+        /**
+         * Displays a temporary message to the user.
+         */
+        function showMessage(message, type = 'error') {
+            messageArea.textContent = message;
+            messageArea.className = type; // 'error' or 'success'
+
+            // Clear message after 3 seconds
+            setTimeout(() => {
+                messageArea.textContent = '';
+                messageArea.className = '';
+            }, 3000);
+        }
+
+        /**
+         * Simple HTML escaping to prevent XSS.
+         */
+        function escapeHTML(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[m];
+            });
+        }
+
+        // --- Initial Setup ---
+        todoForm.addEventListener('submit', addTodo);
+        fetchTodos(); // Load initial todos on page load
+    });
+</script>
+</body>
+</html>
